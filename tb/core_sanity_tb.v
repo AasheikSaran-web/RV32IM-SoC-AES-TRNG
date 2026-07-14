@@ -14,9 +14,10 @@ module core_sanity_tb;
 
     wire [31:0] dmem_addr;
     wire        dmem_req;
-    wire        dmem_we;
-    wire [3:0]  dmem_be;
+    wire [3:0]  dmem_wstrb;
     wire [31:0] dmem_wdata;
+    wire        dmem_we = |dmem_wstrb;
+    wire [3:0]  dmem_be = dmem_wstrb;
     reg  [31:0] dmem_rdata;
     reg         dmem_ready;
 
@@ -60,8 +61,7 @@ module core_sanity_tb;
 
         .dmem_addr  (dmem_addr),
         .dmem_req   (dmem_req),
-        .dmem_we    (dmem_we),
-        .dmem_be    (dmem_be),
+        .dmem_wstrb (dmem_wstrb),
         .dmem_wdata (dmem_wdata),
         .dmem_rdata (dmem_rdata),
         .dmem_ready (dmem_ready),
@@ -86,7 +86,7 @@ module core_sanity_tb;
             imem[5]  = 32'h00300113;
             imem[6]  = 32'h002081B3;
             imem[7]  = 32'h40208233;
-            imem[8]  = 32'h002092B3;
+            imem[8]  = 32'h0020F2B3;  // AND x5, x1, x2  (was SLL — wrong funct3)
             imem[9]  = 32'h0020E333;
             imem[10] = 32'h0020C3B3;
             imem[11] = 32'h0020A433;
@@ -143,7 +143,7 @@ module core_sanity_tb;
             imem[52] = 32'h00000013;
 
             imem[53] = 32'h02208C33;
-            imem[54] = 32'h0220C CB3;
+            imem[54] = 32'h0220CCB3;
 
             imem[54] = 32'h0220_4CB3;
             imem[55] = 32'h0220_6D33;

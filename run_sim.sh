@@ -15,7 +15,7 @@ SIM=${SIM:-iverilog}   # set SIM=vlog for ModelSim
 run_iverilog() {
     local name=$1; shift
     echo "=== Running $name ==="
-    if iverilog -g2012 -o $LOG/${name}.out "$@" && vvp $LOG/${name}.out 2>&1 | tee $LOG/${name}.log; then
+    if iverilog -g2012 -I $RTL/pulp -o $LOG/${name}.out "$@" && vvp $LOG/${name}.out 2>&1 | tee $LOG/${name}.log; then
         # Match "  FAIL [" (actual check failure) — not "0 FAIL" in a summary line
         if grep -qE "^\s+FAIL \[|FAIL:.*=" $LOG/${name}.log; then
             echo "[RESULT] $name: SOME FAILURES"
@@ -56,32 +56,49 @@ fi
 # ---------------------------------------------------------------
 if [[ $TARGET == "sanity" || $TARGET == "all" ]]; then
     run_iverilog core_sanity   \
+        $RTL/aes_instr.v       \
         $RTL/../rv32i_cpu.v    \
         $TB/core_sanity_tb.v
 fi
 
 # ---------------------------------------------------------------
-# Full SoC testbench
+# Full SoC testbench — SystemVerilog with PULP Platform IPs
+# Compile order: reg_bus_pkg.sv first (package), then all IPs, then SoC top
 # ---------------------------------------------------------------
+PULP=$RTL/pulp
+
 if [[ $TARGET == "soc" || $TARGET == "all" ]]; then
-    run_iverilog riscv_soc_tb  \
-        $RTL/../rv32i_cpu.v    \
-        $RTL/boot_rom.v        \
-        $RTL/sram_dp.v         \
-        $RTL/clint.v           \
-        $RTL/plic.v            \
-        $RTL/uart.v            \
-        $RTL/spi.v             \
-        $RTL/gpio.v            \
-        $RTL/timer.v           \
-        $RTL/i2c_master.v      \
-        $RTL/adc_if.v          \
-        $RTL/trng_ca.v         \
-        $RTL/aes_instr.v       \
-        $RTL/cpu_axi_adapter.v \
-        $RTL/axi_lite_xbar.v   \
-        $RTL/axi_lite_apb_bridge.v \
-        $RTL/../riscv_soc.v    \
+    # SoC simulation uses riscv_soc.v (Verilog 2001 compatible, with PULP UART/SPI/I2C/Timer
+    # and custom clint/plic/apb_gpio for iverilog compatibility).
+    # riscv_soc.sv is the synthesis target (SystemVerilog with PULP GPIO/PLIC/CLINT).
+    run_iverilog riscv_soc_tb          \
+        $RTL/aes_instr.v               \
+        $RTL/../rv32i_cpu.v            \
+        $RTL/boot_rom.v                \
+        $RTL/sram_dp.v                 \
+        $RTL/adc_if.v                  \
+        $RTL/trng_ca.v                 \
+        $RTL/clint.v                   \
+        $RTL/plic.v                    \
+        $RTL/apb_gpio.v                \
+        $RTL/cpu_axi_adapter.v         \
+        $RTL/axi_lite_xbar.v           \
+        $RTL/axi_lite_apb_bridge.v     \
+        $PULP/apb_uart_beh.v           \
+        $PULP/spi_master_clkgen.sv     \
+        $PULP/spi_master_controller.sv \
+        $PULP/spi_master_fifo.sv       \
+        $PULP/spi_master_rx.sv         \
+        $PULP/spi_master_tx.sv         \
+        $PULP/spi_master_apb_if.sv     \
+        $PULP/apb_spi_master.sv        \
+        $PULP/i2c_master_defines.sv    \
+        $PULP/i2c_master_bit_ctrl.sv   \
+        $PULP/i2c_master_byte_ctrl.sv  \
+        $PULP/apb_i2c.sv               \
+        $PULP/timer_unit.sv            \
+        $PULP/apb_timer.sv             \
+        $RTL/../riscv_soc.v            \
         $TB/riscv_soc_tb.v
 fi
 
@@ -89,27 +106,47 @@ fi
 # JTAG / Scan wrapper testbench (boundary scan)
 # ---------------------------------------------------------------
 if [[ $TARGET == "dft" || $TARGET == "all" ]]; then
-    run_iverilog jtag_tap_tb   \
-        $RTL/jtag_tap.v        \
-        $RTL/bscan_cell.v      \
-        $RTL/scan_wrapper.v    \
-        $RTL/../rv32i_cpu.v    \
-        $RTL/boot_rom.v        \
-        $RTL/sram_dp.v         \
-        $RTL/clint.v           \
-        $RTL/plic.v            \
-        $RTL/uart.v            \
-        $RTL/spi.v             \
-        $RTL/gpio.v            \
-        $RTL/timer.v           \
-        $RTL/i2c_master.v      \
-        $RTL/adc_if.v          \
-        $RTL/trng_ca.v         \
-        $RTL/aes_instr.v       \
-        $RTL/cpu_axi_adapter.v \
-        $RTL/axi_lite_xbar.v   \
-        $RTL/axi_lite_apb_bridge.v \
-        $RTL/../riscv_soc.v    \
+    run_iverilog jtag_tap_tb           \
+        $RTL/jtag_tap.v                \
+        $RTL/bscan_cell.v              \
+        $RTL/scan_wrapper.v            \
+        $PULP/reg_bus_pkg.sv           \
+        $RTL/aes_instr.v               \
+        $RTL/../rv32i_cpu.v            \
+        $RTL/boot_rom.v                \
+        $RTL/sram_dp.v                 \
+        $RTL/adc_if.v                  \
+        $RTL/trng_ca.v                 \
+        $RTL/cpu_axi_adapter.v         \
+        $RTL/axi_lite_xbar.v           \
+        $RTL/axi_lite_apb_bridge.v     \
+        $PULP/slib_clock_div.sv        \
+        $PULP/slib_counter.sv          \
+        $PULP/slib_edge_detect.sv      \
+        $PULP/slib_fifo.sv             \
+        $PULP/slib_input_filter.sv     \
+        $PULP/slib_input_sync.sv       \
+        $PULP/slib_mv_filter.sv        \
+        $PULP/apb_uart_beh.v            \
+        $PULP/spi_master_clkgen.sv     \
+        $PULP/spi_master_controller.sv \
+        $PULP/spi_master_fifo.sv       \
+        $PULP/spi_master_rx.sv         \
+        $PULP/spi_master_tx.sv         \
+        $PULP/spi_master_apb_if.sv     \
+        $PULP/apb_spi_master.sv        \
+        $PULP/i2c_master_defines.sv    \
+        $PULP/i2c_master_bit_ctrl.sv   \
+        $PULP/i2c_master_byte_ctrl.sv  \
+        $PULP/apb_i2c.sv               \
+        $PULP/timer_unit.sv            \
+        $PULP/apb_timer.sv             \
+        $PULP/axil_to_regbus.sv        \
+        $PULP/apb_to_regbus.sv         \
+        $PULP/gpio_pulp.sv             \
+        $PULP/plic_top_pulp.sv         \
+        $PULP/clint_pulp.sv            \
+        $RTL/../riscv_soc.sv           \
         $TB/tb_jtag_tap.v 2>&1 | tee $LOG/dft.log || true
 fi
 

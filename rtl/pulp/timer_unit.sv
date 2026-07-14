@@ -127,11 +127,13 @@ module timer
         end
     end
     // synchronouse part
-    always_ff @(posedge HCLK, negedge HRESETn)
+    always @(posedge HCLK or negedge HRESETn)
     begin
         if(~HRESETn)
         begin
-            regs_q          <= '{default: 32'b0};
+            regs_q[0]       <= 32'b0;
+            regs_q[1]       <= 32'b0;
+            regs_q[2]       <= 32'b0;
             cycle_counter_q <= 32'b0;
         end
         else

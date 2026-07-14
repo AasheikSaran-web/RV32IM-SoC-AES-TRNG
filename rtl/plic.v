@@ -18,7 +18,7 @@ module plic #(
     output             ext_irq
 );
 
-    reg [2:0]  priority   [1:N_SRC];
+    reg [2:0]  irq_prio   [1:N_SRC];
 
     reg [N_SRC:1] ie;
     reg [N_SRC:1] ip;
@@ -42,9 +42,9 @@ module plic #(
         winner     = 5'd0;
         winner_pri = 3'd0;
         for (k = 1; k <= N_SRC; k = k + 1) begin
-            if (ip[k] && ie[k] && (priority[k] > threshold) && (priority[k] > winner_pri)) begin
+            if (ip[k] && ie[k] && (irq_prio[k] > threshold) && (irq_prio[k] > winner_pri)) begin
                 winner     = k[4:0];
-                winner_pri = priority[k];
+                winner_pri = irq_prio[k];
             end
         end
     end
@@ -58,29 +58,29 @@ module plic #(
             ie        <= 0;
             threshold <= 3'd0;
             claimed   <= 5'd0;
-            for (m = 1; m <= N_SRC; m = m + 1) priority[m] <= 3'd1;
+            for (m = 1; m <= N_SRC; m = m + 1) irq_prio[m] <= 3'd1;
         end else begin
             s_awready <= 0; s_wready <= 0;
             if (s_awvalid && s_wvalid && !s_bvalid) begin
                 s_awready <= 1'b1; s_wready <= 1'b1;
                 casez (s_awaddr[23:0])
 
-                    24'h00_0004: priority[1]  <= s_wdata[2:0];
-                    24'h00_0008: priority[2]  <= s_wdata[2:0];
-                    24'h00_000C: priority[3]  <= s_wdata[2:0];
-                    24'h00_0010: priority[4]  <= s_wdata[2:0];
-                    24'h00_0014: priority[5]  <= s_wdata[2:0];
-                    24'h00_0018: priority[6]  <= s_wdata[2:0];
-                    24'h00_001C: priority[7]  <= s_wdata[2:0];
-                    24'h00_0020: priority[8]  <= s_wdata[2:0];
-                    24'h00_0024: priority[9]  <= s_wdata[2:0];
-                    24'h00_0028: priority[10] <= s_wdata[2:0];
-                    24'h00_002C: priority[11] <= s_wdata[2:0];
-                    24'h00_0030: priority[12] <= s_wdata[2:0];
-                    24'h00_0034: priority[13] <= s_wdata[2:0];
-                    24'h00_0038: priority[14] <= s_wdata[2:0];
-                    24'h00_003C: priority[15] <= s_wdata[2:0];
-                    24'h00_0040: priority[16] <= s_wdata[2:0];
+                    24'h00_0004: irq_prio[1]  <= s_wdata[2:0];
+                    24'h00_0008: irq_prio[2]  <= s_wdata[2:0];
+                    24'h00_000C: irq_prio[3]  <= s_wdata[2:0];
+                    24'h00_0010: irq_prio[4]  <= s_wdata[2:0];
+                    24'h00_0014: irq_prio[5]  <= s_wdata[2:0];
+                    24'h00_0018: irq_prio[6]  <= s_wdata[2:0];
+                    24'h00_001C: irq_prio[7]  <= s_wdata[2:0];
+                    24'h00_0020: irq_prio[8]  <= s_wdata[2:0];
+                    24'h00_0024: irq_prio[9]  <= s_wdata[2:0];
+                    24'h00_0028: irq_prio[10] <= s_wdata[2:0];
+                    24'h00_002C: irq_prio[11] <= s_wdata[2:0];
+                    24'h00_0030: irq_prio[12] <= s_wdata[2:0];
+                    24'h00_0034: irq_prio[13] <= s_wdata[2:0];
+                    24'h00_0038: irq_prio[14] <= s_wdata[2:0];
+                    24'h00_003C: irq_prio[15] <= s_wdata[2:0];
+                    24'h00_0040: irq_prio[16] <= s_wdata[2:0];
 
                     24'h00_2000: ie <= s_wdata[N_SRC:1];
 
@@ -107,22 +107,22 @@ module plic #(
             if (s_arvalid && !s_rvalid) begin
                 s_arready <= 1'b1; s_rresp <= 2'b00; s_rvalid <= 1'b1;
                 casez (s_araddr[23:0])
-                    24'h00_0004: s_rdata <= {29'd0, priority[1]};
-                    24'h00_0008: s_rdata <= {29'd0, priority[2]};
-                    24'h00_000C: s_rdata <= {29'd0, priority[3]};
-                    24'h00_0010: s_rdata <= {29'd0, priority[4]};
-                    24'h00_0014: s_rdata <= {29'd0, priority[5]};
-                    24'h00_0018: s_rdata <= {29'd0, priority[6]};
-                    24'h00_001C: s_rdata <= {29'd0, priority[7]};
-                    24'h00_0020: s_rdata <= {29'd0, priority[8]};
-                    24'h00_0024: s_rdata <= {29'd0, priority[9]};
-                    24'h00_0028: s_rdata <= {29'd0, priority[10]};
-                    24'h00_002C: s_rdata <= {29'd0, priority[11]};
-                    24'h00_0030: s_rdata <= {29'd0, priority[12]};
-                    24'h00_0034: s_rdata <= {29'd0, priority[13]};
-                    24'h00_0038: s_rdata <= {29'd0, priority[14]};
-                    24'h00_003C: s_rdata <= {29'd0, priority[15]};
-                    24'h00_0040: s_rdata <= {29'd0, priority[16]};
+                    24'h00_0004: s_rdata <= {29'd0, irq_prio[1]};
+                    24'h00_0008: s_rdata <= {29'd0, irq_prio[2]};
+                    24'h00_000C: s_rdata <= {29'd0, irq_prio[3]};
+                    24'h00_0010: s_rdata <= {29'd0, irq_prio[4]};
+                    24'h00_0014: s_rdata <= {29'd0, irq_prio[5]};
+                    24'h00_0018: s_rdata <= {29'd0, irq_prio[6]};
+                    24'h00_001C: s_rdata <= {29'd0, irq_prio[7]};
+                    24'h00_0020: s_rdata <= {29'd0, irq_prio[8]};
+                    24'h00_0024: s_rdata <= {29'd0, irq_prio[9]};
+                    24'h00_0028: s_rdata <= {29'd0, irq_prio[10]};
+                    24'h00_002C: s_rdata <= {29'd0, irq_prio[11]};
+                    24'h00_0030: s_rdata <= {29'd0, irq_prio[12]};
+                    24'h00_0034: s_rdata <= {29'd0, irq_prio[13]};
+                    24'h00_0038: s_rdata <= {29'd0, irq_prio[14]};
+                    24'h00_003C: s_rdata <= {29'd0, irq_prio[15]};
+                    24'h00_0040: s_rdata <= {29'd0, irq_prio[16]};
                     24'h00_1000: s_rdata <= {15'd0, ip};
                     24'h00_2000: s_rdata <= {15'd0, ie};
                     24'h20_0000: s_rdata <= {29'd0, threshold};

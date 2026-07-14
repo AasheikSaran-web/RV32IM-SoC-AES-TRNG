@@ -31,34 +31,55 @@ module apb_timer
 );
 
     logic [TIMER_CNT-1:0] psel_int, pready, pslverr;
-    logic [$clog2(TIMER_CNT) - 1:0] slave_address_int;
     logic [TIMER_CNT-1:0] [31:0] prdata;
 
-    assign slave_address_int = PADDR[$clog2(TIMER_CNT)+ `REGS_MAX_ADR + 1:`REGS_MAX_ADR + 2];
-
-    always_comb
-    begin
-        psel_int = '0;
-        psel_int[slave_address_int] = PSEL;
-    end
-
-    // output mux
-    always_comb
-    begin
-
-        if (psel_int != '0)
-        begin
-            PRDATA = prdata[slave_address_int];
-            PREADY = pready[slave_address_int];
-            PSLVERR = pslverr[slave_address_int];
+    // slave_address_int selects which timer sub-module handles the request.
+    // When TIMER_CNT==1, clog2(1)==0 so the part-select would be out-of-order;
+    // guard with a generate to avoid iverilog elaboration errors.
+    generate
+        if (TIMER_CNT > 1) begin : multi_timer
+            logic [$clog2(TIMER_CNT)-1:0] slave_address_int;
+            assign slave_address_int = PADDR[$clog2(TIMER_CNT)+`REGS_MAX_ADR+1:`REGS_MAX_ADR+2];
+            always @(*) begin
+                psel_int = {TIMER_CNT{1'b0}};
+                psel_int[slave_address_int] = PSEL;
+            end
+        end else begin : single_timer
+            always @(*) begin
+                psel_int = PSEL;   // only one slave; always selected when PSEL is asserted
+            end
         end
-        else
-        begin
-            PRDATA = '0;
-            PREADY = 1'b1;
-            PSLVERR = 1'b0;
+    endgenerate
+
+    // output mux — for TIMER_CNT==1 always use index 0;
+    // for TIMER_CNT>1 use slave_address_int from the generate block above.
+    generate
+        if (TIMER_CNT > 1) begin : multi_timer_mux
+            always @(*) begin
+                if (psel_int != {TIMER_CNT{1'b0}}) begin
+                    PRDATA  = prdata [multi_timer.slave_address_int];
+                    PREADY  = pready [multi_timer.slave_address_int];
+                    PSLVERR = pslverr[multi_timer.slave_address_int];
+                end else begin
+                    PRDATA  = 32'h0;
+                    PREADY  = 1'b1;
+                    PSLVERR = 1'b0;
+                end
+            end
+        end else begin : single_timer_mux
+            always @(*) begin
+                if (psel_int) begin
+                    PRDATA  = prdata [0];
+                    PREADY  = pready [0];
+                    PSLVERR = pslverr[0];
+                end else begin
+                    PRDATA  = 32'h0;
+                    PREADY  = 1'b1;
+                    PSLVERR = 1'b0;
+                end
+            end
         end
-    end
+    endgenerate
 
 
     genvar k;
