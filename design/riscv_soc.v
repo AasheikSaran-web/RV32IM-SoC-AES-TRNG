@@ -2,15 +2,13 @@ module riscv_soc (
     input         clk,
     input         rst_n,
 
-    output        spi0_sck,
-    output        spi0_mosi,
-    input         spi0_miso,
-    output        spi0_cs_n,
-
-    output        spi1_sck,
-    output        spi1_mosi,
-    input         spi1_miso,
-    output        spi1_cs_n,
+    output        spi_sck,
+    output        spi_mosi,
+    input         spi_miso,
+    output        spi_cs0_n,
+    output        spi_cs1_n,
+    output        spi_cs2_n,
+    output        spi_cs3_n,
 
     output        uart0_tx,
     input         uart0_rx,
@@ -57,10 +55,6 @@ module riscv_soc (
     wire [31:0] im_araddr;  wire im_arvalid, im_arready;
     wire [31:0] im_rdata;   wire [1:0] im_rresp; wire im_rvalid, im_rready;
 
-    wire [31:0] im_awaddr = 32'd0; wire im_awvalid = 0, im_awready_nc;
-    wire [31:0] im_wdata  = 32'd0; wire [3:0] im_wstrb = 4'd0; wire im_wvalid = 0, im_wready_nc;
-    wire [1:0]  im_bresp_nc; wire im_bvalid_nc; wire im_bready = 0;
-
     cpu_axi_adapter #(.READ_ONLY(1)) u_imem_axi (
         .clk       (clk), .rst_n     (rst_n),
         .cpu_addr  (imem_addr), .cpu_wdata(32'd0), .cpu_wstrb(4'd0),
@@ -94,16 +88,9 @@ module riscv_soc (
 
     wire [31:0] brom_araddr;  wire brom_arvalid, brom_arready;
     wire [31:0] brom_rdata;   wire [1:0] brom_rresp; wire brom_rvalid, brom_rready;
-    wire [31:0] brom_awaddr = 32'd0; wire brom_awvalid = 0, brom_awready_nc;
-    wire [31:0] brom_wdata  = 32'd0; wire [3:0] brom_wstrb = 0; wire brom_wvalid = 0, brom_wready_nc;
-    wire [1:0]  brom_bresp_nc; wire brom_bvalid_nc; wire brom_bready = 0;
 
     wire [31:0] sram_pa_araddr; wire sram_pa_arvalid, sram_pa_arready;
     wire [31:0] sram_pa_rdata;  wire [1:0] sram_pa_rresp; wire sram_pa_rvalid, sram_pa_rready;
-    wire [31:0] sram_pa_awaddr_nc = 32'd0; wire sram_pa_awvalid_nc = 0, sram_pa_awready_nc;
-    wire [31:0] sram_pa_wdata_nc  = 32'd0; wire [3:0] sram_pa_wstrb_nc = 0;
-    wire sram_pa_wvalid_nc = 0, sram_pa_wready_nc, sram_pa_bvalid_nc, sram_pa_bready = 0;
-    wire [1:0] sram_pa_bresp_nc;
 
     axi_lite_xbar #(
         .N_SLV(8),
@@ -117,7 +104,6 @@ module riscv_soc (
         .BASE7(32'h4000_0000), .MASK7(32'hFFFF_0000)
     ) u_imem_xbar (
         .clk(clk), .rst_n(rst_n),
-
         .m_awaddr(32'd0), .m_awvalid(1'b0), .m_awready(),
         .m_wdata(32'd0), .m_wstrb(4'd0), .m_wvalid(1'b0), .m_wready(),
         .m_bresp(), .m_bvalid(), .m_bready(1'b0),
@@ -184,13 +170,6 @@ module riscv_soc (
     wire        sram_pb_arvalid, sram_pb_arready;
     wire [1:0]  sram_pb_rresp; wire sram_pb_rvalid, sram_pb_rready;
 
-    wire [31:0] aes_awaddr, aes_araddr, aes_wdata, aes_rdata;
-    wire [3:0]  aes_wstrb;
-    wire        aes_awvalid, aes_awready, aes_wvalid, aes_wready;
-    wire [1:0]  aes_bresp; wire aes_bvalid, aes_bready;
-    wire        aes_arvalid, aes_arready;
-    wire [1:0]  aes_rresp; wire aes_rvalid, aes_rready;
-
     wire [31:0] trng_awaddr, trng_araddr, trng_wdata, trng_rdata;
     wire [3:0]  trng_wstrb;
     wire        trng_awvalid, trng_awready, trng_wvalid, trng_wready;
@@ -210,7 +189,6 @@ module riscv_soc (
         .BASE7(32'h4000_0000), .MASK7(32'hFFFF_0000)
     ) u_dmem_xbar (
         .clk(clk), .rst_n(rst_n),
-
         .m_awaddr(dm_awaddr), .m_awvalid(dm_awvalid), .m_awready(dm_awready),
         .m_wdata(dm_wdata), .m_wstrb(dm_wstrb), .m_wvalid(dm_wvalid), .m_wready(dm_wready),
         .m_bresp(dm_bresp), .m_bvalid(dm_bvalid), .m_bready(dm_bready),
@@ -245,11 +223,9 @@ module riscv_soc (
         .s4_araddr(sram_pb_araddr), .s4_arvalid(sram_pb_arvalid), .s4_arready(sram_pb_arready),
         .s4_rdata(sram_pb_rdata), .s4_rresp(sram_pb_rresp), .s4_rvalid(sram_pb_rvalid), .s4_rready(sram_pb_rready),
 
-        .s5_awaddr(aes_awaddr), .s5_awvalid(aes_awvalid), .s5_awready(aes_awready),
-        .s5_wdata(aes_wdata), .s5_wstrb(aes_wstrb), .s5_wvalid(aes_wvalid), .s5_wready(aes_wready),
-        .s5_bresp(aes_bresp), .s5_bvalid(aes_bvalid), .s5_bready(aes_bready),
-        .s5_araddr(aes_araddr), .s5_arvalid(aes_arvalid), .s5_arready(aes_arready),
-        .s5_rdata(aes_rdata), .s5_rresp(aes_rresp), .s5_rvalid(aes_rvalid), .s5_rready(aes_rready),
+        .s5_awaddr(),.s5_awvalid(),.s5_awready(1'b1),.s5_wdata(),.s5_wstrb(),.s5_wvalid(),.s5_wready(1'b1),
+        .s5_bresp(2'b0),.s5_bvalid(1'b0),.s5_bready(),.s5_araddr(),.s5_arvalid(),.s5_arready(1'b1),
+        .s5_rdata(32'd0),.s5_rresp(2'b0),.s5_rvalid(1'b0),.s5_rready(),
 
         .s6_awaddr(trng_awaddr), .s6_awvalid(trng_awvalid), .s6_awready(trng_awready),
         .s6_wdata(trng_wdata), .s6_wstrb(trng_wstrb), .s6_wvalid(trng_wvalid), .s6_wready(trng_wready),
@@ -273,13 +249,11 @@ module riscv_soc (
 
     sram_dp u_sram (
         .clk(clk), .rst_n(rst_n),
-
         .pa_araddr(sram_pa_araddr), .pa_arvalid(sram_pa_arvalid), .pa_arready(sram_pa_arready),
         .pa_rdata(sram_pa_rdata), .pa_rresp(sram_pa_rresp), .pa_rvalid(sram_pa_rvalid), .pa_rready(sram_pa_rready),
         .pa_awaddr(32'd0), .pa_awvalid(1'b0), .pa_awready(),
         .pa_wdata(32'd0), .pa_wstrb(4'd0), .pa_wvalid(1'b0), .pa_wready(),
         .pa_bresp(), .pa_bvalid(), .pa_bready(1'b0),
-
         .pb_araddr(sram_pb_araddr), .pb_arvalid(sram_pb_arvalid), .pb_arready(sram_pb_arready),
         .pb_rdata(sram_pb_rdata), .pb_rresp(sram_pb_rresp), .pb_rvalid(sram_pb_rvalid), .pb_rready(sram_pb_rready),
         .pb_awaddr(sram_pb_awaddr), .pb_awvalid(sram_pb_awvalid), .pb_awready(sram_pb_awready),
@@ -337,74 +311,95 @@ module riscv_soc (
     );
 
     wire uart0_irq;
-    uart #(.CLK_FREQ(50_000_000), .BAUD_RATE(115200)) u_uart0 (
-        .pclk(clk), .presetn(rst_n),
-        .paddr(paddr_bus[7:0]), .psel(psel0_bus), .penable(penable_bus),
-        .pwrite(pwrite_bus), .pwdata(pwdata_bus), .prdata(prdata0), .pready(pready0), .pslverr(),
-        .uart_tx(uart0_tx), .uart_rx(uart0_rx), .irq(uart0_irq)
+    apb_uart u_uart0 (
+        .CLK(clk),    .RSTN(rst_n),
+        .PSEL(psel0_bus), .PENABLE(penable_bus), .PWRITE(pwrite_bus),
+        .PADDR(paddr_bus[2:0]), .PWDATA(pwdata_bus), .PRDATA(prdata0),
+        .PREADY(pready0), .PSLVERR(),
+        .INT(uart0_irq),
+        .OUT1N(), .OUT2N(), .RTSN(), .DTRN(),
+        .CTSN(1'b1), .DSRN(1'b1), .DCDN(1'b1), .RIN(1'b1),
+        .SIN(uart0_rx), .SOUT(uart0_tx)
     );
 
     wire uart1_irq;
-    uart #(.CLK_FREQ(50_000_000), .BAUD_RATE(115200)) u_uart1 (
-        .pclk(clk), .presetn(rst_n),
-        .paddr(paddr_bus[7:0]), .psel(psel1_bus), .penable(penable_bus),
-        .pwrite(pwrite_bus), .pwdata(pwdata_bus), .prdata(prdata1), .pready(pready1), .pslverr(),
-        .uart_tx(uart1_tx), .uart_rx(uart1_rx), .irq(uart1_irq)
+    apb_uart u_uart1 (
+        .CLK(clk),    .RSTN(rst_n),
+        .PSEL(psel1_bus), .PENABLE(penable_bus), .PWRITE(pwrite_bus),
+        .PADDR(paddr_bus[2:0]), .PWDATA(pwdata_bus), .PRDATA(prdata1),
+        .PREADY(pready1), .PSLVERR(),
+        .INT(uart1_irq),
+        .OUT1N(), .OUT2N(), .RTSN(), .DTRN(),
+        .CTSN(1'b1), .DSRN(1'b1), .DCDN(1'b1), .RIN(1'b1),
+        .SIN(uart1_rx), .SOUT(uart1_tx)
     );
 
-    wire spi0_irq;
-    spi u_spi0 (
-        .pclk(clk), .presetn(rst_n),
-        .paddr(paddr_bus[7:0]), .psel(psel2_bus), .penable(penable_bus),
-        .pwrite(pwrite_bus), .pwdata(pwdata_bus), .prdata(prdata2), .pready(pready2), .pslverr(),
-        .sck(spi0_sck), .mosi(spi0_mosi), .miso(spi0_miso), .cs_n(spi0_cs_n), .irq(spi0_irq)
-    );
+    wire [1:0] spi_events;
+    wire       spi_irq = spi_events[1];
 
-    wire spi1_irq;
-    spi u_spi1 (
-        .pclk(clk), .presetn(rst_n),
-        .paddr(paddr_bus[7:0]), .psel(psel3_bus), .penable(penable_bus),
-        .pwrite(pwrite_bus), .pwdata(pwdata_bus), .prdata(prdata3), .pready(pready3), .pslverr(),
-        .sck(spi1_sck), .mosi(spi1_mosi), .miso(spi1_miso), .cs_n(spi1_cs_n), .irq(spi1_irq)
-    );
-
-    wire gpio_irq;
-    gpio u_gpio (
-        .pclk(clk), .presetn(rst_n),
-        .paddr(paddr_bus[7:0]), .psel(psel4_bus), .penable(penable_bus),
-        .pwrite(pwrite_bus), .pwdata(pwdata_bus), .prdata(prdata4), .pready(pready4), .pslverr(),
-        .gpio_pins(gpio_pins), .irq(gpio_irq)
-    );
-
-    wire timer_apb_irq;
-    timer u_timer (
-        .pclk(clk), .presetn(rst_n),
-        .paddr(paddr_bus[7:0]), .psel(psel5_bus), .penable(penable_bus),
-        .pwrite(pwrite_bus), .pwdata(pwdata_bus), .prdata(prdata5), .pready(pready5), .pslverr(),
-        .irq(timer_apb_irq)
+    apb_spi_master #(.BUFFER_DEPTH(8), .APB_ADDR_WIDTH(12)) u_spi (
+        .HCLK(clk), .HRESETn(rst_n),
+        .PADDR(paddr_bus[11:0]), .PWDATA(pwdata_bus), .PWRITE(pwrite_bus),
+        .PSEL(psel2_bus), .PENABLE(penable_bus), .PRDATA(prdata2),
+        .PREADY(pready2), .PSLVERR(),
+        .events_o(spi_events),
+        .spi_clk(spi_sck),
+        .spi_csn0(spi_cs0_n), .spi_csn1(spi_cs1_n),
+        .spi_csn2(spi_cs2_n), .spi_csn3(spi_cs3_n),
+        .spi_mode(),
+        .spi_sdo0(spi_mosi), .spi_sdo1(), .spi_sdo2(), .spi_sdo3(),
+        .spi_sdi0(spi_miso), .spi_sdi1(1'b0), .spi_sdi2(1'b0), .spi_sdi3(1'b0)
     );
 
     wire i2c_irq;
-    i2c_master u_i2c (
+    wire sda_in_w, sda_out_w, sda_oen_w;
+    wire scl_in_w, scl_out_w, scl_oen_w;
+
+    apb_i2c #(.APB_ADDR_WIDTH(12)) u_i2c (
+        .HCLK(clk), .HRESETn(rst_n),
+        .PADDR(paddr_bus[11:0]), .PWDATA(pwdata_bus), .PWRITE(pwrite_bus),
+        .PSEL(psel3_bus), .PENABLE(penable_bus), .PRDATA(prdata3),
+        .PREADY(pready3), .PSLVERR(),
+        .interrupt_o(i2c_irq),
+        .scl_pad_i(scl_in_w), .scl_pad_o(scl_out_w), .scl_padoen_o(scl_oen_w),
+        .sda_pad_i(sda_in_w), .sda_pad_o(sda_out_w), .sda_padoen_o(sda_oen_w)
+    );
+
+    assign sda_in_w = i2c_sda;
+    assign i2c_sda  = (!sda_oen_w) ? sda_out_w : 1'bz;
+    assign scl_in_w = i2c_scl;
+    assign i2c_scl  = (!scl_oen_w) ? scl_out_w : 1'bz;
+
+    wire gpio_irq;
+    apb_gpio #(.N_GPIO(32), .APB_ADDR_WIDTH(8)) u_gpio (
         .pclk(clk), .presetn(rst_n),
-        .paddr(paddr_bus[7:0]), .psel(psel6_bus), .penable(penable_bus),
-        .pwrite(pwrite_bus), .pwdata(pwdata_bus), .prdata(prdata6), .pready(pready6), .pslverr(),
-        .sda(i2c_sda), .scl(i2c_scl), .irq(i2c_irq)
+        .paddr(paddr_bus[7:0]), .psel(psel4_bus), .penable(penable_bus),
+        .pwrite(pwrite_bus), .pwdata(pwdata_bus), .prdata(prdata4), .pready(pready4),
+        .pslverr(),
+        .gpio_pins(gpio_pins), .irq(gpio_irq)
+    );
+
+    wire [1:0] timer_irq_vec;
+    wire timer_apb_irq = |timer_irq_vec;
+
+    apb_timer #(.APB_ADDR_WIDTH(12), .TIMER_CNT(1)) u_timer (
+        .HCLK(clk), .HRESETn(rst_n),
+        .PADDR(paddr_bus[11:0]), .PWDATA(pwdata_bus), .PWRITE(pwrite_bus),
+        .PSEL(psel5_bus), .PENABLE(penable_bus), .PRDATA(prdata5),
+        .PREADY(pready5), .PSLVERR(),
+        .irq_o(timer_irq_vec)
     );
 
     wire adc_irq;
     adc_if u_adc (
         .pclk(clk), .presetn(rst_n),
-        .paddr(paddr_bus[7:0]), .psel(psel7_bus), .penable(penable_bus),
-        .pwrite(pwrite_bus), .pwdata(pwdata_bus), .prdata(prdata7), .pready(pready7), .pslverr(),
+        .paddr(paddr_bus[7:0]), .psel(psel6_bus), .penable(penable_bus),
+        .pwrite(pwrite_bus), .pwdata(pwdata_bus), .prdata(prdata6), .pready(pready6), .pslverr(),
         .adc_data(adc_data), .adc_eoc(adc_eoc), .adc_soc(adc_soc), .adc_ch(adc_ch), .irq(adc_irq)
     );
 
-    assign aes_awready = 1'b1; assign aes_wready  = 1'b1;
-    assign aes_bresp   = 2'b00; assign aes_bvalid = 1'b0;
-    assign aes_arready = 1'b1;
-    assign aes_rdata   = 32'h0000_0000;
-    assign aes_rresp   = 2'b00; assign aes_rvalid = 1'b0;
+    assign prdata7 = 32'd0;
+    assign pready7 = 1'b1;
 
     trng_ca u_trng (
         .clk(clk), .rst_n(rst_n),
@@ -418,6 +413,6 @@ module riscv_soc (
 
     assign plic_irq_src = {8'b0,
                            adc_irq, i2c_irq, timer_apb_irq, gpio_irq,
-                           spi1_irq, spi0_irq, uart1_irq, uart0_irq};
+                           spi_irq, 1'b0, uart1_irq, uart0_irq};
 
 endmodule
