@@ -1,14 +1,14 @@
 ## ============================================================
 ##  Cadence Genus – Synthesis Script
-##  Target: RV32IM SoC with AES / TRNG @ 65nm
+##  Target: RV32IM SoC with AES / TRNG @ 28nm
 ##
 ##  Usage:
 ##    genus -legacy_ui -f synth_genus.tcl | tee synth_genus.log
 ## ============================================================
 
 set TOP_MODULE   riscv_soc
-set TARGET_LIB   "your_std_cell.lib"   ;# replace with your PDK .lib
-set SYNTH_FREQ   500                   ;# MHz
+set TARGET_LIB   "your_28nm_std_cell.lib"  ;# replace with your 28nm PDK .lib
+set SYNTH_FREQ   1000                      ;# MHz (28nm supports higher frequency)
 set CLK_NAME     clk
 
 set RESULTS_DIR  ./results
