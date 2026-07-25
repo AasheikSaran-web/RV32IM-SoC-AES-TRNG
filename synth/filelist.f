@@ -1,19 +1,6 @@
-// ============================================================
-//  RV32IM SoC – Synthesis File List
-//  Compatible with: Synopsys DC, Cadence Genus, VCS/Xcelium
-//  Excludes: simulation-only behavioral models (apb_uart_beh.v)
-//
-//  Usage:
-//    Design Compiler : read_file -format sverilog -f filelist.f
-//    Genus           : read_hdl -f filelist.f
-//    VCS lint        : vcs -sv -f filelist.f
-// ============================================================
-
-// ---------- Package (must be first for SV type resolution) ----------
 +incdir+./rtl/pulp
 ./rtl/pulp/reg_bus_pkg.sv
 
-// ---------- PULP Platform open-source IPs ----------
 ./rtl/pulp/apb_to_regbus.sv
 ./rtl/pulp/axil_to_regbus.sv
 
@@ -50,7 +37,6 @@
 ./rtl/pulp/spi_master_rx.sv
 ./rtl/pulp/spi_master_tx.sv
 
-// ---------- Custom peripherals ----------
 ./rtl/adc_if.v
 ./rtl/aes256.v
 ./rtl/aes_instr.v
@@ -73,8 +59,6 @@
 ./rtl/trng_ca.v
 ./rtl/uart.v
 
-// ---------- CPU core ----------
 ./rtl/rv32i_cpu.v
 
-// ---------- SoC top-level ----------
 ./rtl/riscv_soc.sv
