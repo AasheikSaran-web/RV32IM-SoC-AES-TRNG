@@ -45,6 +45,8 @@ module apb_gpio #(
     wire [N_GPIO-1:0] rise_edge = padin & ~padin_prev;
     wire [N_GPIO-1:0] fall_edge = ~padin & padin_prev;
 
+    wire intstatus_rd = psel && penable && !pwrite && (paddr[5:0] == 6'h18);
+
     genvar gi;
     generate
         for (gi = 0; gi < N_GPIO; gi = gi + 1) begin : irq_gen
@@ -60,8 +62,6 @@ module apb_gpio #(
             end
         end
     endgenerate
-
-    wire intstatus_rd = psel && penable && !pwrite && (paddr[5:0] == 6'h18);
 
     assign irq = |intstatus;
 
