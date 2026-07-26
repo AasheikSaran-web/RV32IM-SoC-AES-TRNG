@@ -54,7 +54,6 @@
 ./rtl/scan_wrapper.v
 ./rtl/spi.v
 ./rtl/sram_dp.v
-./rtl/timer.v
 ./rtl/trng.v
 ./rtl/trng_ca.v
 ./rtl/uart.v
