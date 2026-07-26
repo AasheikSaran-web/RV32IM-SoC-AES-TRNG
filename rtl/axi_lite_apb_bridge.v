@@ -49,8 +49,8 @@ module axi_lite_apb_bridge #(
     task set_psel;
         input [2:0] sel;
         begin
-            psel0 = (sel==0); psel1 = (sel==1); psel2 = (sel==2); psel3 = (sel==3);
-            psel4 = (sel==4); psel5 = (sel==5); psel6 = (sel==6); psel7 = (sel==7);
+            psel0 <= (sel==0); psel1 <= (sel==1); psel2 <= (sel==2); psel3 <= (sel==3);
+            psel4 <= (sel==4); psel5 <= (sel==5); psel6 <= (sel==6); psel7 <= (sel==7);
         end
     endtask
 
