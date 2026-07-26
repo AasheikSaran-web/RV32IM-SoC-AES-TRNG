@@ -41,8 +41,6 @@ module uart #(
     reg [7:0]  rx_data;
     reg        rx_valid;
 
-    initial baud_div = CLK_FREQ / BAUD_RATE;
-
     assign uart_tx = tx_out;
     assign irq     = (rx_valid && rx_irq_en) || (!tx_busy && tx_irq_en);
 

@@ -18,15 +18,13 @@ module scan_wrapper (
     output pad_uart1_tx,
     input  pad_uart1_rx,
 
-    output pad_spi0_sck,
-    output pad_spi0_mosi,
-    input  pad_spi0_miso,
-    output pad_spi0_csn,
-
-    output pad_spi1_sck,
-    output pad_spi1_mosi,
-    input  pad_spi1_miso,
-    output pad_spi1_csn,
+    output pad_spi_sck,
+    output pad_spi_mosi,
+    input  pad_spi_miso,
+    output pad_spi_cs0_n,
+    output pad_spi_cs1_n,
+    output pad_spi_cs2_n,
+    output pad_spi_cs3_n,
 
     inout  [31:0] pad_gpio,
 
@@ -65,8 +63,8 @@ module scan_wrapper (
 
     wire core_uart0_tx, core_uart0_rx;
     wire core_uart1_tx, core_uart1_rx;
-    wire core_spi0_sck, core_spi0_mosi, core_spi0_miso, core_spi0_csn;
-    wire core_spi1_sck, core_spi1_mosi, core_spi1_miso, core_spi1_csn;
+    wire core_spi_sck, core_spi_mosi, core_spi_miso;
+    wire core_spi_cs0_n, core_spi_cs1_n, core_spi_cs2_n, core_spi_cs3_n;
     wire [31:0] core_gpio_out, core_gpio_in, core_gpio_oe;
     wire core_sda_out, core_sda_in, core_sda_oe;
     wire core_scl_out, core_scl_in, core_scl_oe;
@@ -74,7 +72,20 @@ module scan_wrapper (
     wire [11:0] core_adc_data;
     wire [2:0]  core_adc_ch;
 
-    wire [96:0] chain;
+    // Boundary scan chain
+    // chain[0]       : bscan_tdi
+    // [1..2]         : uart0_tx, uart0_rx
+    // [3..4]         : uart1_tx, uart1_rx
+    // [5..8]         : spi_sck, spi_mosi, spi_miso, spi_cs0_n
+    // [9..11]        : spi_cs1_n, spi_cs2_n, spi_cs3_n
+    // [12..75]       : gpio[0..31] (2 cells per pin: bc_4 + bc_7)
+    // [76..77]       : i2c_sda, i2c_scl
+    // [78]           : adc_soc
+    // [79]           : adc_eoc
+    // [80..91]       : adc_data[0..11]
+    // [92..94]       : adc_ch[0..2]
+    // chain[95]      : bscan_tdo output tap
+    wire [95:0] chain;
     assign chain[0] = bscan_tdi;
 
     bc_2 u_bc_uart0_tx (
@@ -105,15 +116,13 @@ module scan_wrapper (
         .pin_in(pad_uart1_rx), .core_out(core_uart1_rx)
     );
 
-    bc_2 u_bc_spi0_sck  (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.extest(bscan_mode),.si(chain[4]),.so(chain[5]),.core_in(core_spi0_sck),.pin_out(pad_spi0_sck));
-    bc_2 u_bc_spi0_mosi (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.extest(bscan_mode),.si(chain[5]),.so(chain[6]),.core_in(core_spi0_mosi),.pin_out(pad_spi0_mosi));
-    bc_1 u_bc_spi0_miso (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.si(chain[6]),.so(chain[7]),.pin_in(pad_spi0_miso),.core_out(core_spi0_miso));
-    bc_2 u_bc_spi0_csn  (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.extest(bscan_mode),.si(chain[7]),.so(chain[8]),.core_in(core_spi0_csn),.pin_out(pad_spi0_csn));
-
-    bc_2 u_bc_spi1_sck  (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.extest(bscan_mode),.si(chain[8]),.so(chain[9]),.core_in(core_spi1_sck),.pin_out(pad_spi1_sck));
-    bc_2 u_bc_spi1_mosi (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.extest(bscan_mode),.si(chain[9]),.so(chain[10]),.core_in(core_spi1_mosi),.pin_out(pad_spi1_mosi));
-    bc_1 u_bc_spi1_miso (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.si(chain[10]),.so(chain[11]),.pin_in(pad_spi1_miso),.core_out(core_spi1_miso));
-    bc_2 u_bc_spi1_csn  (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.extest(bscan_mode),.si(chain[11]),.so(chain[12]),.core_in(core_spi1_csn),.pin_out(pad_spi1_csn));
+    bc_2 u_bc_spi_sck  (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.extest(bscan_mode),.si(chain[4]),.so(chain[5]),.core_in(core_spi_sck),.pin_out(pad_spi_sck));
+    bc_2 u_bc_spi_mosi (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.extest(bscan_mode),.si(chain[5]),.so(chain[6]),.core_in(core_spi_mosi),.pin_out(pad_spi_mosi));
+    bc_1 u_bc_spi_miso (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.si(chain[6]),.so(chain[7]),.pin_in(pad_spi_miso),.core_out(core_spi_miso));
+    bc_2 u_bc_spi_cs0n (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.extest(bscan_mode),.si(chain[7]),.so(chain[8]),.core_in(core_spi_cs0_n),.pin_out(pad_spi_cs0_n));
+    bc_2 u_bc_spi_cs1n (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.extest(bscan_mode),.si(chain[8]),.so(chain[9]),.core_in(core_spi_cs1_n),.pin_out(pad_spi_cs1_n));
+    bc_2 u_bc_spi_cs2n (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.extest(bscan_mode),.si(chain[9]),.so(chain[10]),.core_in(core_spi_cs2_n),.pin_out(pad_spi_cs2_n));
+    bc_2 u_bc_spi_cs3n (.capture_clk(tck),.update_clk(tck),.capture_en(bscan_capture),.shift_en(bscan_shift),.update_en(bscan_update),.extest(bscan_mode),.si(chain[10]),.so(chain[11]),.core_in(core_spi_cs3_n),.pin_out(pad_spi_cs3_n));
 
     genvar gi;
     generate
@@ -189,17 +198,15 @@ module scan_wrapper (
         .uart1_tx (core_uart1_tx),
         .uart1_rx (core_uart1_rx),
 
-        .spi0_sck (core_spi0_sck),
-        .spi0_mosi(core_spi0_mosi),
-        .spi0_miso(core_spi0_miso),
-        .spi0_csn (core_spi0_csn),
+        .spi_sck  (core_spi_sck),
+        .spi_mosi (core_spi_mosi),
+        .spi_miso (core_spi_miso),
+        .spi_cs0_n(core_spi_cs0_n),
+        .spi_cs1_n(core_spi_cs1_n),
+        .spi_cs2_n(core_spi_cs2_n),
+        .spi_cs3_n(core_spi_cs3_n),
 
-        .spi1_sck (core_spi1_sck),
-        .spi1_mosi(core_spi1_mosi),
-        .spi1_miso(core_spi1_miso),
-        .spi1_csn (core_spi1_csn),
-
-        .gpio     (pad_gpio),
+        .gpio_pins(pad_gpio),
 
         .i2c_sda  (pad_i2c_sda),
         .i2c_scl  (pad_i2c_scl),

@@ -102,179 +102,179 @@ always @(posedge CLK or posedge RST)
 
 always @(CState or TXSTART or DIN or WLS or PEN or SP or EPS or STB or iParity)
   begin
-     NState <= IDLE; // 413
-     iSout <=  1'b1; // 413
+     NState = IDLE;
+     iSout =  1'b1;
      case (CState)
        IDLE:
          begin
             if ((TXSTART ==  1'b1))
               begin
-                 NState <= START; // 413
+                 NState = START;
               end
-            
+
          end
-       
+
        START:
          begin
-            iSout <=  1'b0; // 413
-            NState <= BIT0; // 413
+            iSout =  1'b0;
+            NState = BIT0;
          end
-       
+
        BIT0:
          begin
-            iSout <= DIN[0]; // 413
-            NState <= BIT1; // 413
+            iSout = DIN[0];
+            NState = BIT1;
          end
-       
+
        BIT1:
          begin
-            iSout <= DIN[1]; // 413
-            NState <= BIT2; // 413
+            iSout = DIN[1];
+            NState = BIT2;
          end
-       
+
        BIT2:
          begin
-            iSout <= DIN[2]; // 413
-            NState <= BIT3; // 413
+            iSout = DIN[2];
+            NState = BIT3;
          end
-       
+
        BIT3:
          begin
-            iSout <= DIN[3]; // 413
-            NState <= BIT4; // 413
+            iSout = DIN[3];
+            NState = BIT4;
          end
-       
+
        BIT4:
          begin
-            iSout <= DIN[4]; // 413
+            iSout = DIN[4];
             if ((WLS == 2'b00))
               begin
                  if ((PEN ==  1'b1))
                    begin
-                      NState <= PAR; // 413
+                      NState = PAR;
                    end
                  else
                    begin
-                      NState <= STOP; // 413
+                      NState = STOP;
                    end
               end
             else
               begin
-                 NState <= BIT5; // 413
+                 NState = BIT5;
               end
          end
-       
+
        BIT5:
          begin
-            iSout <= DIN[5]; // 413
+            iSout = DIN[5];
             if ((WLS == 2'b01))
               begin
                  if ((PEN ==  1'b1))
                    begin
-                      NState <= PAR; // 413
+                      NState = PAR;
                    end
                  else
                    begin
-                      NState <= STOP; // 413
+                      NState = STOP;
                    end
               end
             else
               begin
-                 NState <= BIT6; // 413
+                 NState = BIT6;
               end
          end
-       
+
        BIT6:
          begin
-            iSout <= DIN[6]; // 413
+            iSout = DIN[6];
             if ((WLS == 2'b10))
               begin
                  if ((PEN ==  1'b1))
                    begin
-                      NState <= PAR; // 413
+                      NState = PAR;
                    end
                  else
                    begin
-                      NState <= STOP; // 413
+                      NState = STOP;
                    end
               end
             else
               begin
-                 NState <= BIT7; // 413
+                 NState = BIT7;
               end
          end
-       
+
        BIT7:
          begin
-            iSout <= DIN[7]; // 413
+            iSout = DIN[7];
             if ((PEN ==  1'b1))
               begin
-                 NState <= PAR; // 413
+                 NState = PAR;
               end
             else
               begin
-                 NState <= STOP; // 413
+                 NState = STOP;
               end
          end
-       
+
        PAR:
          begin
             if ((SP ==  1'b1))
               begin
                  if ((EPS ==  1'b1))
                    begin
-                      iSout <=  1'b0; // 413
+                      iSout =  1'b0;
                    end
                  else
                    begin
-                      iSout <=  1'b1; // 413
+                      iSout =  1'b1;
                    end
               end
             else
               begin
                  if ((EPS ==  1'b1))
                    begin
-                      iSout <= iParity; // 413
+                      iSout = iParity;
                    end
                  else
                    begin
-                      iSout <=  ~ iParity; // 413
+                      iSout =  ~ iParity;
                    end
               end
-            NState <= STOP; // 413
+            NState = STOP;
          end
-       
+
        STOP:
          begin
             if ((STB ==  1'b1))
               begin
-                 NState <= STOP2; // 413
+                 NState = STOP2;
               end
             else
               begin
                  if ((TXSTART ==  1'b1))
                    begin
-                      NState <= START; // 413
+                      NState = START;
                    end
-                 
+
               end
          end
-       
+
   STOP2:
     begin
        if ((TXSTART ==  1'b1))
          begin
-            NState <= START; // 413
+            NState = START;
          end
-       
+
     end
-       
+
        default:
          begin
             begin end  end
-       
+
      endcase
-     
+
   end
    
     // Parity generation
@@ -287,10 +287,10 @@ always @(CState or TXSTART or DIN or WLS or PEN or SP or EPS or STB or iParity)
         iP70 = DIN[7] ^ iP60;
 
         case(WLS)
-            2'b00: iParity <= iP40;
-            2'b01: iParity <= iP50;
-            2'b10: iParity <= iP60;
-            default: iParity <= iP70;
+            2'b00: iParity = iP40;
+            2'b01: iParity = iP50;
+            2'b10: iParity = iP60;
+            default: iParity = iP70;
         endcase;
     end
 

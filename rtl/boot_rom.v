@@ -27,6 +27,7 @@ module boot_rom #(
 
     reg [DW-1:0] rom [0:1023];
 
+    // synthesis translate_off
     integer i;
     initial begin
         for (i = 0; i < 1024; i = i + 1) rom[i] = 32'h0000_0013;
@@ -70,6 +71,7 @@ module boot_rom #(
         rom[67] = 32'h34121073;
         rom[68] = 32'h30200073;
     end
+    // synthesis translate_on
 
     reg [9:0] rd_addr;
 

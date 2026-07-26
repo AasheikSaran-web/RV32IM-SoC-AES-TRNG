@@ -882,61 +882,61 @@ always @(PADDR or iLCR_DLAB or iRBR or iDLL or iDLM or iIER or iIIR or iLCR or i
          begin
             if ((iLCR_DLAB ==  1'b0))
               begin
-                 PRDATA[7:0] <= iRBR;
+                 PRDATA[7:0] = iRBR;
               end
             else
               begin
-                 PRDATA[7:0] <= iDLL;
+                 PRDATA[7:0] = iDLL;
               end
          end
-       
+
        3'b001:
          begin
             if ((iLCR_DLAB ==  1'b0))
               begin
-                 PRDATA[7:0] <= iIER;
+                 PRDATA[7:0] = iIER;
               end
             else
               begin
-                 PRDATA[7:0] <= iDLM;
+                 PRDATA[7:0] = iDLM;
               end
          end
-       
+
        3'b010:
          begin
-            PRDATA[7:0] <= iIIR;
+            PRDATA[7:0] = iIIR;
          end
-       
+
        3'b011:
          begin
-            PRDATA[7:0] <= iLCR;
+            PRDATA[7:0] = iLCR;
          end
-       
+
        3'b100:
          begin
-            PRDATA[7:0] <= iMCR;
+            PRDATA[7:0] = iMCR;
          end
-       
+
        3'b101:
          begin
-            PRDATA[7:0] <= iLSR;
+            PRDATA[7:0] = iLSR;
          end
-       
+
        3'b110:
          begin
-            PRDATA[7:0] <= iMSR;
+            PRDATA[7:0] = iMSR;
          end
-       
+
        3'b111:
          begin
-            PRDATA[7:0] <= iSCR;
+            PRDATA[7:0] = iSCR;
          end
-       
+
        default:
          begin
-            PRDATA[7:0] <= iRBR;
+            PRDATA[7:0] = iRBR;
          end
-       
+
      endcase
 
   end

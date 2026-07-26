@@ -87,8 +87,13 @@ module plic_top_pulp
   end
 
   // -------------------------------------------------------------------------
-  // Register writes (always_ff)
+  // Register writes (always_ff) — helper variables declared outside the block
   // -------------------------------------------------------------------------
+  int                              ff_src_idx;
+  int                              ff_cmp_id;
+  logic [$clog2(N_SOURCE+1)-1:0]  ff_best_id;
+  logic [PRIO_BITS-1:0]            ff_best_prio;
+
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       for (int i = 0; i < N_SOURCE; i++) ip_prio[i] <= '0;
@@ -120,10 +125,9 @@ module plic_top_pulp
         // Source priority registers: 0x000000 + 4*i
         if (wr_addr[23:16] == 8'h00 && wr_addr[15:12] == 4'h0) begin
           // Address range 0x000000..0x000FFC
-          automatic int src_idx;
-          src_idx = int'(wr_addr[11:2]); // word index = addr[11:2]
-          if (src_idx < N_SOURCE) begin
-            ip_prio[src_idx] <= wr_data[PRIO_BITS-1:0];
+          ff_src_idx = int'(wr_addr[11:2]); // word index = addr[11:2]
+          if (ff_src_idx < N_SOURCE) begin
+            ip_prio[ff_src_idx] <= wr_data[PRIO_BITS-1:0];
           end
         end
 
@@ -141,12 +145,11 @@ module plic_top_pulp
 
         // Claim/complete target 0: 0x200004 — write = complete
         if (wr_addr == 32'h200004) begin
-          automatic int cmp_id;
-          cmp_id = int'(wr_data[$clog2(N_SOURCE+1)-1:0]);
-          if (cmp_id > 0 && cmp_id < N_SOURCE) begin
+          ff_cmp_id = int'(wr_data[$clog2(N_SOURCE+1)-1:0]);
+          if (ff_cmp_id > 0 && ff_cmp_id < N_SOURCE) begin
             // Complete: clear pending and claimed
-            pending[cmp_id] <= 1'b0;
-            claimed[cmp_id] <= 1'b0;
+            pending[ff_cmp_id] <= 1'b0;
+            claimed[ff_cmp_id] <= 1'b0;
           end
         end
       end
@@ -156,20 +159,18 @@ module plic_top_pulp
       // -----------------------------------------------------------------------
       if (rd_valid && rd_addr == 32'h200004) begin
         // Find highest priority enabled pending source above threshold
-        automatic logic [$clog2(N_SOURCE+1)-1:0] best_id;
-        automatic logic [PRIO_BITS-1:0]           best_prio;
-        best_id   = '0;
-        best_prio = threshold[0];
+        ff_best_id   = '0;
+        ff_best_prio = threshold[0];
         for (int i = 1; i < N_SOURCE; i++) begin
-          if (pending[i] && ie[0][i] && (ip_prio[i] > best_prio)) begin
-            best_prio = ip_prio[i];
-            best_id   = $clog2(N_SOURCE+1)'(i);
+          if (pending[i] && ie[0][i] && (ip_prio[i] > ff_best_prio)) begin
+            ff_best_prio = ip_prio[i];
+            ff_best_id   = $clog2(N_SOURCE+1)'(i);
           end
         end
-        claim_reg[0] <= best_id;
-        if (best_id != '0) begin
-          claimed[best_id] <= 1'b1;
-          pending[best_id] <= 1'b0;
+        claim_reg[0] <= ff_best_id;
+        if (ff_best_id != '0) begin
+          claimed[ff_best_id] <= 1'b1;
+          pending[ff_best_id] <= 1'b0;
         end
       end
     end
@@ -192,18 +193,20 @@ module plic_top_pulp
   // -------------------------------------------------------------------------
   // Register read — combinational
   // -------------------------------------------------------------------------
+  int comb_src_idx;
+
   always_comb begin
     resp_o.ready = 1'b1;
     resp_o.error = 1'b0;
     resp_o.rdata = 32'h0;
+    comb_src_idx = 0;
 
     if (rd_valid) begin
       // Source priority registers: 0x000000 + 4*i
       if (rd_addr[23:12] == 12'h000) begin
-        automatic int src_idx;
-        src_idx = int'(rd_addr[11:2]);
-        if (src_idx < N_SOURCE) begin
-          resp_o.rdata = 32'(ip_prio[src_idx]);
+        comb_src_idx = int'(rd_addr[11:2]);
+        if (comb_src_idx < N_SOURCE) begin
+          resp_o.rdata = 32'(ip_prio[comb_src_idx]);
         end
       end
       // Pending bits: 0x001000

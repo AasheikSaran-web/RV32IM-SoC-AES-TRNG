@@ -115,7 +115,7 @@ assign /*432*/ iFilterClear = iBaudStepD | iBaudCountClear; // 434
 
 always @(iDOUT or EPS)
 begin
-iParity <= (((((((iDOUT[7] ^ iDOUT[6]) ^ iDOUT[5]) ^ iDOUT[4]) ^ iDOUT[3]) ^ iDOUT[2]) ^ iDOUT[1]) ^ iDOUT[0]) ^  ~ EPS; // 413
+iParity = (((((((iDOUT[7] ^ iDOUT[6]) ^ iDOUT[5]) ^ iDOUT[4]) ^ iDOUT[3]) ^ iDOUT[2]) ^ iDOUT[1]) ^ iDOUT[0]) ^  ~ EPS;
 
 end
 
@@ -159,104 +159,104 @@ always @(posedge CLK or posedge RST)
 
 always @(CState or SIN or iFSIN or iFStopBit or iBaudStep or iBaudCount or iDataCountFinish or PEN or WLS or STB)
 begin
-NState <= IDLE; // 413
-iBaudCountClear <=  1'b0; // 413
-iDataCountInit <=  1'b0; // 413
-iRXFinished <=  1'b0; // 413
+NState = IDLE;
+iBaudCountClear =  1'b0;
+iDataCountInit =  1'b0;
+iRXFinished =  1'b0;
 case (CState)
   IDLE:
     begin
   if ((SIN ==  1'b0))
           begin
-      NState <= START; // 413
+      NState = START;
               end
-      
-iBaudCountClear <=  1'b1; // 413
-    iDataCountInit <=  1'b1; // 413
+
+iBaudCountClear =  1'b1;
+    iDataCountInit =  1'b1;
       end
-  
+
   START:
     begin
-  iDataCountInit <=  1'b1; // 413
+  iDataCountInit =  1'b1;
     if ((iBaudStep ==  1'b1))
           begin
       if ((iFSIN ==  1'b0))
                   begin
-          NState <= DATA; // 413
+          NState = DATA;
                       end
-          
+
       end
        else
       begin
-      NState <= START; // 413
+      NState = START;
               end
         end
-  
+
   DATA:
     begin
   if ((iDataCountFinish ==  1'b1))
           begin
       if ((PEN ==  1'b1))
                   begin
-          NState <= PAR; // 413
+          NState = PAR;
                       end
            else
           begin
-          NState <= STOP; // 413
+          NState = STOP;
                       end
                 end
        else
       begin
-      NState <= DATA; // 413
+      NState = DATA;
               end
         end
-  
+
   PAR:
     begin
   if ((iBaudStep ==  1'b1))
           begin
-      NState <= STOP; // 413
+      NState = STOP;
               end
        else
       begin
-      NState <= PAR; // 413
+      NState = PAR;
               end
         end
-  
+
   STOP:
     begin
   if ((iBaudCount[3] ==  1'b1))
           begin
       if ((iFStopBit ==  1'b0))
                   begin
-          iRXFinished <=  1'b1; // 413
-            NState <= MWAIT; // 413
+          iRXFinished =  1'b1;
+            NState = MWAIT;
                       end
            else
           begin
-          iRXFinished <=  1'b1; // 413
-            NState <= IDLE; // 413
+          iRXFinished =  1'b1;
+            NState = IDLE;
                       end
                 end
        else
       begin
-      NState <= STOP; // 413
+      NState = STOP;
               end
         end
-  
+
   MWAIT:
     begin
   if ((SIN ==  1'b0))
           begin
-      NState <= MWAIT; // 413
+      NState = MWAIT;
               end
-      
+
   end
-  
+
   default:
     begin
   begin end  end
-  
+
 endcase
 
 end

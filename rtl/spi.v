@@ -42,8 +42,6 @@ module spi (
     assign mosi = mosi_r;
     assign irq  = done && irq_en;
 
-    initial begin div_reg = 16'd4; cpol = 0; cpha = 0; cs_n = 1; end
-
     always @(posedge pclk or negedge presetn) begin
         if (!presetn) begin
             div_reg <= 4; cpol <= 0; cpha <= 0; cs_auto <= 0; irq_en <= 0;
